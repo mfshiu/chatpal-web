@@ -52,6 +52,9 @@
 
     {% include 'layout/bodytail.html' %}
 
+    <script src="https://cdn.jsdelivr.net/npm/onnxruntime-web/dist/ort.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@ricky0123/vad-web@0.0.7/dist/bundle.min.js"></script>
+
     <script>
       $(document).ready(function () {
         
@@ -59,39 +62,45 @@
     </script>
 
     <script>
-      let is_paused = false;
+      let is_pause = true;
       let mediaRecorder;
       let audioChunks = [];
 
       document.getElementById('startButton').addEventListener('click', async function() {
         console.log('Start recording.');
-        is_paused = false;
+        is_pause = false;
+      });
 
-        let audioContext = new (window.AudioContext || window.webkitAudioContext)();
-        await audioContext.audioWorklet.addModule("{{ url_for('static', filename='js/audio-processor.js') }}");
-    
-        let microphoneStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        let microphone = audioContext.createMediaStreamSource(microphoneStream);
-        let audioProcessorNode = new AudioWorkletNode(audioContext, 'audio-processor');
-    
-        audioProcessorNode.port.onmessage = (event) => {
-          if (is_paused) {
-            return
-          }
+      document.getElementById('stopButton').addEventListener('click', async function() {
+        console.log('Stop recording.');
+        is_pause = true;
+        audioChunks = [];
+      });
 
-          if (event.data.speaking) {
-            console.log('Recording...');
+      async function main() {
+        const myvad = await vad.MicVAD.new({
+          onSpeechStart: () => {
+            if (is_pause) {
+              return;
+            }
+            console.log("Speech start detected")
             navigator.mediaDevices.getUserMedia({ audio: true })
-              .then(stream => {
-                mediaRecorder = new MediaRecorder(stream);
-                mediaRecorder.ondataavailable = event => audioChunks.push(event.data);
-                mediaRecorder.start();
-              });
-          }
-          else {
-            console.log('stop');
+            .then(stream => {
+              mediaRecorder = new MediaRecorder(stream);
+              mediaRecorder.ondataavailable = event => audioChunks.push(event.data);
+              mediaRecorder.start();
+              console.log("Start recording.");
+            });
+          },
+          onSpeechEnd: (audio) => {
+            // do something with `audio` (Float32Array of audio samples at sample rate 16000)...
+            if (is_pause) {
+              return;
+            }
+            console.log("Speech end")
             mediaRecorder.stop();
             mediaRecorder.onstop = () => {
+              console.log("Upload wave. audioChunks:", audioChunks.length);
               const audioBlob = new Blob(audioChunks, { 'type' : 'audio/wav; codecs=opus' });
               audioChunks = [];
 
@@ -100,16 +109,11 @@
               fetch("/upload_voice", { method: "POST", body: formData });
             }
           }
-        };
-    
-        microphone.connect(audioProcessorNode).connect(audioContext.destination);
-      });
+        })
+        myvad.start()
+      }
+      main()
 
-      document.getElementById('stopButton').addEventListener('click', async function() {
-        console.log('Stop recording.');
-        is_paused = true;
-        audioChunks = [];
-      });
     </script>
   </body>
 </html>

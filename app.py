@@ -14,8 +14,8 @@ app = Flask(__name__)
 app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
 app.register_blueprint(book_app)
 app.register_blueprint(setting_app)
-     
       
+     
 @app.context_processor
 def inject_stage_and_region():  
     return dict(title="vChat 管理系統")
@@ -24,10 +24,10 @@ def inject_stage_and_region():
 @app.route('/')
 def home():
     # return render_template('/app-user-list.html')
-    return render_template('/index_test.html')
+    return render_template('/index.html')
     # return redirect(url_for('booking.book'))
     
-    
+     
 @app.route('/upload_voice', methods=['POST'])
 def upload_voice():
     if 'audio_data' in request.files:
