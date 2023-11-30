@@ -1,0 +1,51 @@
+<aside id="layout-menu" class="layout-menu menu-vertical menu bg-menu-theme">
+    <div class="app-brand demo">
+        <a href="index.html" class="app-brand-link">
+        <span class="app-brand-logo demo">
+            <image 
+            src="{{ url_for('static', filename='/assets/img/branding/logo.png') }}" 
+            with="40" 
+            heigh="42" 
+            alt="悠悅光" />
+        </span>
+        <span class="app-brand-text demo menu-text fw-bolder ms-2">悠悅光管理</span>
+        </a>
+
+        <a href="javascript:void(0);" class="layout-menu-toggle menu-link text-large ms-auto">
+        <i class="bx bx-chevron-left bx-sm align-middle"></i>
+        </a>
+    </div>
+
+    <div class="menu-inner-shadow"></div>
+
+    <ul class="menu-inner py-1">
+        <li class="menu-header small text-uppercase"><span class="menu-header-text">訂單管理</span></li>
+        <li class="menu-item">
+            <a href="/book" class="menu-link">
+                <i class="menu-icon tf-icons bx bx-bed"></i>
+                <div>訂房管理</div>
+            </a>
+        </li>
+        <li class="menu-item">
+            <a href="/book" class="menu-link">
+                <i class="menu-icon tf-icons bx bx-building"></i>
+                <div>包棟管理</div>
+            </a>
+        </li>
+    </ul>
+    <ul class="menu-inner py-1">
+      <li class="menu-header small text-uppercase"><span class="menu-header-text">資料設定</span></li>
+      <li class="menu-item">
+          <a href="/price" class="menu-link">
+              <i class="menu-icon tf-icons bx bx-money-withdraw"></i>
+              <div>房間價格設定</div>
+          </a>
+      </li>
+      <li class="menu-item">
+          <a href="/holiday" class="menu-link">
+              <i class="menu-icon tf-icons bx bx-calendar"></i>
+              <div>假日設定</div>
+          </a>
+      </li>
+  </ul>
+</aside>

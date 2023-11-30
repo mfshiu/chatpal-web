@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+
+<html
+  lang="en"
+  class="light-style layout-navbar-fixed layout-menu-fixed"
+  dir="ltr"
+  data-theme="theme-default"
+  data-assets-path="../static/assets/"
+  data-template="vertical-menu-template"
+>
+  <head>
+    {% include 'layout/head.html' %}
+
+    <style>
+      .book-data-row {
+        cursor: pointer;
+      }
+
+      .row-select {
+        background-color: gainsboro;
+      }
+    </style>
+  </head>
+
+  <body>
+    <!-- Layout wrapper -->
+    <div class="layout-wrapper layout-content-navbar">
+      <div class="layout-container">
+        {% include 'layout/menu.html' %}
+
+        <!-- Layout container -->
+        <div class="layout-page">
+
+          {% include 'layout/navbar.html' %}
+
+          <div class="content-wrapper">
+            <!-- Content -->
+
+            <div class="container-xxl flex-grow-1 container-p-y">
+              <h4 class="fw-bold py-3 mb-4"><span class="text-muted fw-light">訂單管理 /</span> 訂房管理</h4>
+
+              <!-- 訂房清單 -->
+              <div class="card" style="border-radius: 0.5rem 0.5rem 0 0;">
+                <h5 class="card-header"><strong>訂房清單</strong></h5>
+                <div class="table-responsive">
+                  <table id="book-list" class="table table-hover">
+                    <thead class="table-light">
+                      <tr style="text-align: center;">
+                        <th>入住日期</th>
+                        <th>退房日期</th>
+                        <th>姓名</th>
+                        <th>電話</th>
+                        <th>Email</th>
+                        <!--<th>狀態</th>-->
+                        <th>抵逹時間</th>
+                        <th>人數</th>
+                        <!--<th></th>-->
+                      </tr>
+                    </thead>
+                    <tbody class="table-border-bottom-0">
+                      {% for order in room_orders %}
+                      {% set adult_count = order["details"]["adult_count"]|int %}
+                      {% set children_count = order["details"]["children_count"]|int %}
+                      <tr class="book-data-row" data-book-id='{{order["book_id"]}}' 
+                      data-comment='{{order["details"]["comment"]}}'
+                      data-adult-count='{{adult_count}}'
+                      data-children-count='{{children_count}}'                      
+                      data-rooms='{{order["rooms"]}}'>
+                        <td><strong>{{order["check_in_date"]}}</strong></td>
+                        <td>{{order["check_out_date"]}}</td>
+                        <td>{{order["booker_name"]}}</td>
+                        <td>{{order["booker_phone"]}}</td>
+                        <td>{{order["booker_email"]}}</td>
+                        <!--<td style="text-align: center;"><span class="badge bg-label-primary me-1">已付訂</span></td>-->
+                        <td style="text-align: right;">{{order["details"]["arrival_time"]}}</td>
+                        <td style="text-align: right;">{{adult_count + children_count}}</td>
+                        <!--<td>
+                          <button type="button" class="btn p-0">
+                            <i class="bx bx-edit-alt me-1"></i>
+                          </button>
+                        </td>-->
+                      </tr>
+                      {% endfor %}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+              <!--/ 訂房清單 -->
+
+              <!-- 詳細資訊 -->
+              <div class="card" style="border-radius: 0">
+                <h5 class="card-header" style="margin-top: 1.5rem;">詳細資訊</h5>
+                <h6 class="card-header" style="padding-top: 0;"><strong style="margin-right: 10px;">人數</strong><span id="details-count"></span></h6>
+                <h6 class="card-header" style="padding-top: 0;"><strong style="margin-right: 10px;">備註</strong><span id="details-comment"></span></h6>
+              </div>
+              <!--/ 詳細資訊 -->
+
+              <!-- 房間內容 -->
+              <div class="card" style="border-radius: 0 0 0.5rem 0.5rem;">
+                <h5 class="card-header" style="margin-top: 1.5rem;">房間內容</h5>
+                <div class="table-responsive text-nowrap" style="border-radius: 0 0 0.5rem 0.5rem;">
+                  <table class="table table-dark">
+                    <tbody id="booked-rooms" class="table-border-bottom-0">
+                      <!--<tr>
+                        <td style="width: 3rem;"><strong>J1</strong></td>
+                        <td>獅子</td>
+                      </tr>-->
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+              <!--/ 房間內容 -->
+            </div>
+            <!-- / Content -->
+
+            {% include 'layout/footer.html' %}
+
+            <div class="content-backdrop fade"></div>
+          </div>
+        </div>
+        <!-- / Layout page -->
+      </div>
+
+      <!-- Overlay -->
+      <div class="layout-overlay layout-menu-toggle"></div>
+
+      <!-- Drag Target Area To SlideIn Menu On Small Screens -->
+      <div class="drag-target"></div>
+    </div>
+    <!-- / Layout wrapper -->
+
+    {% include 'layout/bodytail.html' %}
+
+    <script>
+      $(document).ready(function () {
+        update_details = function () {
+          $this = $(this);
+
+          // 詳細資料
+          var adult_count = $this.data("adult-count");
+          var children_count = $this.data("children-count");
+          $("#details-count").text("大人: " + $this.data("adult-count") + " 人  /  小孩: " + $this.data("children-count") + " 人");
+          $("#details-comment").text($this.data("comment"));
+
+          // 已訂房間
+          $("#booked-rooms").empty();
+          if ($this.data("rooms").length > 0) {
+            let rooms = JSON.parse($this.data("rooms").replace(/'/g, "\""));
+            html = "";
+            for (let room of rooms) {
+              tr = "<tr><td style='width: 3rem;'><strong>@id</strong></td><td>@name</td><td>@date</td></tr>";
+              tr = tr.replace("@id", room["room_id"]);
+              tr = tr.replace("@name", room["room_name"]);
+              tr = tr.replace("@date", room["room_date"]);
+              html += tr;
+            }
+            $("#booked-rooms").html(html);
+          }
+
+          // select
+          $(".row-select").removeClass("row-select");
+          $this.addClass("row-select");
+        }
+        // $(".book-data-row").hover(update_details).click(update_details);
+        $(".book-data-row").click(update_details);
+        $("#book-list tbody tr:first").click();
+      });
+    </script>
+  </body>
+</html>

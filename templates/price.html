@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+
+<html
+  lang="en"
+  class="light-style layout-navbar-fixed layout-menu-fixed"
+  dir="ltr"
+  data-theme="theme-default"
+  data-assets-path="{{ url_for('static', filename='assets/') }}"
+  data-template="vertical-menu-template"
+>
+  <head>
+    {% include 'layout/head.html' %}
+
+    <!-- Vendors CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='assets/vendor/libs/flatpickr/flatpickr.css') }}" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='assets/vendor/libs/bootstrap-datepicker/bootstrap-datepicker.css') }}" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='assets/vendor/libs/select2/select2.css') }}" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='assets/vendor/libs/quill/editor.css') }}" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='assets/vendor/libs/@form-validation/umd/styles/index.min.css') }}" />
+
+    <!-- Page CSS -->
+ 
+    <style>
+      .book-data-row {
+        cursor: pointer;
+      }
+      .row-select {
+        background-color: gainsboro;
+      }
+      .month-price {
+        border: 2px solid lightgray;
+        margin: 0 0 30px 0;
+      }
+      .month-price th {
+        text-align: center;
+        padding: 8px;
+      }
+      .event-day {
+          border: 1px solid #eee;
+          padding: 8px 5px;
+      }
+      .month-day {
+        text-align: center;
+        font-size: small;
+        color: darkgray;
+      }
+      .day-price {
+        text-align: right;
+        color: darkslategray;
+        /*margin: 0 3px 0 0;*/
+      }
+    </style>
+  </head>
+
+  <body>
+    <!-- Layout wrapper -->
+    <div class="layout-wrapper layout-content-navbar">
+      <div class="layout-container">
+        {% include 'layout/menu.html' %}
+
+        <!-- Layout container -->
+        <div class="layout-page">
+
+          {% include 'layout/navbar.html' %}
+
+          <div class="content-wrapper">
+            <!-- Content -->
+
+            <div class="container-xxl flex-grow-1 container-p-y">
+              <h4 class="fw-bold py-3 mb-4"><span class="text-muted fw-light">資料設定 /</span> 價格設定</h4>
+
+              <!-- 房間價格設定 -->
+              <div class="card" style="border-radius: 0;">
+                <h5 class="card-header"><strong>房間價格設定</strong></h5>
+                <!-- 選擇房間 -->
+                <div class="card-body">
+                  <small class="text-light fw-semibold">選擇要設定價格的房間</small>
+                  <div class="mt-2 mb-3">
+                    <label for="zone-select" class="form-label">先選擇館別</label>
+                    <select id="zone-select" class="form-select form-select-lg">
+                      {% for zone in zones %}
+                      <option value='{{zone["zone_id"]}}'>{{zone["zone_name"]}}</option>
+                      {% endfor %}
+                    </select>
+                  </div>
+                  <div class="mb-3">
+                    <label for="room-select" class="form-label">再選擇此館的房間</label>
+                    <select id="room-select" class="form-select">
+                      {% for room in rooms %}
+                      <option value='{{room["room_id"]}}'>{{room["room_name"]}}</option>
+                      {% endfor %}
+                    </select>
+                  </div>
+                </div>
+                 <!--/ 選擇房間 -->
+
+                <hr class="m-0" />
+
+                <!-- 選擇日期 -->
+                <div class="card-body">
+                  <small class="text-light fw-semibold">選擇日期</small>
+                  <div class="mt-4">
+                    <label for="roundedInput" class="form-label">開始日期</label>
+                    <input id="flatpickr-date-start" type="text" class="form-control flatpickr-input active" placeholder="YYYY-MM-DD" readonly="readonly">                    
+                  </div>
+                  <div class="mt-2">
+                    <label for="roundedInput" class="form-label">結束日期</label>
+                    <input id="flatpickr-date-end" type="text" class="form-control flatpickr-input active" placeholder="YYYY-MM-DD" readonly="readonly">                    
+                  </div>
+                </div>
+                <!--/ 選擇日期 -->
+
+                <hr class="m-0" />
+
+                <!-- 設定價格 -->
+                <div class="card-body">
+                  <small class="text-light fw-semibold">設定價格</small>
+                  <!-- <div class="mt-4">
+                    <label for="roundedInput" class="form-label">定價</label>
+                    <div class="input-group input-group-merge">
+                      <span class="input-group-text">$</span>
+                      <input id="original-price" type="number" class="form-control" placeholder="88888" aria-label="Amount (to the nearest dollar)">
+                      <button id="button-apply-original-price" class="btn btn-outline-primary" type="button">套用</button>
+                    </div>
+                  </div> -->
+                  <div class="mt-2">
+                    <label for="roundedInput" class="form-label">平日 ※週日至週四</label>
+                    <div class="input-group input-group-merge">
+                      <span class="input-group-text">$</span>
+                      <input id="weekday-price" type="number" class="form-control" placeholder="88888" aria-label="Amount (to the nearest dollar)">
+                      <button class="btn btn-outline-primary" type="button" id="button-apply-weekday-price">套用</button>
+                    </div>
+                  </div>
+                  <div class="mt-2">
+                    <label for="roundedInput" class="form-label">週休假日 ※週五、週六</label>
+                    <div class="input-group input-group-merge">
+                      <span class="input-group-text">$</span>
+                      <input id="weekend-price" type="number" class="form-control" placeholder="88888" aria-label="Amount (to the nearest dollar)">
+                      <button class="btn btn-outline-primary" type="button" id="button-apply-weekend-price">套用</button>
+                    </div>
+                  </div>
+                  <div class="mt-2">
+                    <label for="roundedInput" class="form-label">指定 ※假日、特別日</label>
+                    <div class="input-group input-group-merge">
+                      <span class="input-group-text">$</span>
+                      <input id="special-price" type="number" class="form-control" placeholder="88888" aria-label="Amount (to the nearest dollar)">
+                      <button class="btn btn-outline-primary" type="button" id="button-apply-special-price">套用</button>
+                    </div>
+                  </div>
+                </div>
+                <!--/ 設定價格 -->
+
+                <hr class="m-0" />
+
+                <div class="card-body">
+                  <small class="text-light fw-semibold">房價日曆</small>
+                  <h1>{{year}}年&nbsp;<span id="calendar-zone"></span>&nbsp;<span id="calendar-room"></span></h1>
+                  <div class="container">
+                    <div class="row">
+                      {% for month in range(1, 13) %}
+                      <div class="col">
+                        <h2>{{ month }}月</h2>
+                        <table class="month-price" border="1">
+                          <tr class="weekdays">
+                            {% set weekdays = ['一', '二', '三', '四', '五', '六', '日'] %}
+                            {% for weekday in weekdays %}
+                            <th>{{ weekday }}</th>
+                            {% endfor %}
+                          </tr>
+                          <tr>
+                            <!-- Generate days for the month -->
+                            {% for _ in range(datetime.date(year, month, 1).weekday()) %}
+                            <td></td>
+                            {% endfor %}
+                            {% for day in range(1, calendar.monthrange(year, month)[1]+1) %}
+                                {% set current_date = (year|string) + '-' + (month|string).zfill(2) + '-' + (day|string).zfill(2) %}
+                                <td class="{{ 'event-day' if current_date in prices else '' }}">
+                                    <div class="month-day">{{ day }}</div>
+                                    <div class="day-price">{{ prices.get(current_date, '') }}</div>
+                                </td>
+                                {% if datetime.date(year, month, day).weekday() == 6 %}
+                                    </tr><tr>
+                                {% endif %}
+                            {% endfor %}
+                          </tr>
+                        </table>
+                      </div>
+                      {% endfor %}
+                  </div>
+                  </div>
+                </div>
+  
+              </div>
+              <!--/ 房間價格設定 -->
+            </div>
+            <!-- / Content -->
+
+            {% include 'layout/footer.html' %}
+
+            <div class="content-backdrop fade"></div>
+          </div>
+        </div>
+        <!-- / Layout page -->
+      </div>
+
+      <!-- Overlay -->
+      <div class="layout-overlay layout-menu-toggle"></div>
+
+      <!-- Drag Target Area To SlideIn Menu On Small Screens -->
+      <div class="drag-target"></div>
+    </div>
+    <!-- / Layout wrapper -->
+
+    {% include 'layout/bodytail.html' %}
+
+    <!-- Vendors JS -->
+    <script src="{{ url_for('static', filename='assets/vendor/libs/moment/moment.js') }}"></script>
+    <script src="{{ url_for('static', filename='assets/vendor/libs/flatpickr/flatpickr.js') }}"></script>
+    <script src="{{ url_for('static', filename='assets/vendor/libs/bootstrap-datepicker/bootstrap-datepicker.js') }}"></script>
+    <script src="{{ url_for('static', filename='assets/vendor/libs/pickr/pickr.js') }}"></script>
+
+    <script src="{{ url_for('static', filename='assets/vendor/libs/@form-validation/umd/bundle/popular.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='assets/vendor/libs/@form-validation/umd/plugin-bootstrap5/index.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='assets/vendor/libs/@form-validation/umd/plugin-auto-focus/index.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='assets/vendor/libs/select2/select2.js') }}"></script>
+
+    <!-- Page JS -->
+
+    <script>
+      function getTodayDate() {
+        const today = new Date();
+        const year = today.getFullYear();
+        const month = String(today.getMonth() + 1).padStart(2, '0'); // January is 0!
+        const day = String(today.getDate()).padStart(2, '0');
+
+        return `${year}-${month}-${day}`;
+      }      
+
+      function applyPrice(dayType) {
+        $.ajax({
+            url: '/set_price',
+            type: 'POST',
+            data: { 
+              dayType: dayType,
+              roomID: $('#room-select').val(),
+              startDate: $('#flatpickr-date-start').val(),
+              endDate: $('#flatpickr-date-end').val(),
+              price: $('#' + dayType + '-price').val()
+            },
+            success: function(response){
+                // alert('Server response: ' + response.message);
+                console.log(response.message);
+                location.reload();
+            },
+            error: function(error){
+                console.log(error);
+            }
+        });
+      }      
+
+      $(document).ready(function () {
+        update_details = function () {
+          $this = $(this);
+
+          // 詳細資料
+          var adult_count = $this.data("adult-count");
+          var children_count = $this.data("children-count");
+          $("#details-count").text("大人: " + $this.data("adult-count") + " 人  /  小孩: " + $this.data("children-count") + " 人");
+          $("#details-comment").text($this.data("comment"));
+
+          // 已訂房間
+          $("#booked-rooms").empty();
+          if ($this.data("rooms").length > 0) {
+            let rooms = JSON.parse($this.data("rooms").replace(/'/g, "\""));
+            html = "";
+            for (let room of rooms) {
+              tr = "<tr><td style='width: 3rem;'><strong>@id</strong></td><td>@name</td><td>@date</td></tr>";
+              tr = tr.replace("@id", room["room_id"]);
+              tr = tr.replace("@name", room["room_name"]);
+              tr = tr.replace("@date", room["room_date"]);
+              html += tr;
+            }
+            $("#booked-rooms").html(html);
+          }
+
+          // select
+          $(".row-select").removeClass("row-select");
+          $this.addClass("row-select");
+        }
+        // $(".book-data-row").hover(update_details).click(update_details);
+        $(".book-data-row").click(update_details);
+
+        flatpickrDate = document.querySelector('#flatpickr-date-start')
+        flatpickrDate.flatpickr({
+          monthSelectorType: 'static'
+        });
+
+        flatpickrDate = document.querySelector('#flatpickr-date-end')
+        flatpickrDate.flatpickr({
+          monthSelectorType: 'static'
+        });
+
+        $('#zone-select').change(function() {
+          location.href = "/price/" + $('#zone-select').val();
+        });
+
+        $('#room-select').change(function() {
+          location.href = "/price/" + $('#zone-select').val() + "/" + $('#room-select').val()
+        });
+
+        // $('#button-apply-original-price').click(()=>{applyPrice('original');});
+        $('#button-apply-weekday-price').click(()=>{applyPrice('weekday');});
+        $('#button-apply-weekend-price').click(()=>{applyPrice('weekend');});
+        $('#button-apply-special-price').click(()=>{applyPrice('special');});
+
+        $('#zone-select').val("{{zone_id}}");
+        $('#room-select').val("{{room_id}}");
+        $('#calendar-zone').text($('#zone-select option:selected').text())
+        $('#calendar-room').text( $('#room-select option:selected').text())
+        $('#flatpickr-date-start').val(getTodayDate())
+        $('#flatpickr-date-end').val($('#flatpickr-date-start').val())
+      });
+    </script>
+  </body>
+</html>
