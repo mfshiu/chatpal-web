@@ -92,7 +92,7 @@ def execute_command(command, params):
 
 
 def insert_and_fetch_id(command, params):
-    __logger.debug(f"command: {command}\nparams:{params}")
+    # __logger.debug(f"command: {command}\nparams:{params}")
     identity_id = None
     try:
         conn = create_connection()
