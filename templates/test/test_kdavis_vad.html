@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+
+<html
+  lang="en"
+  class="light-style layout-navbar-fixed layout-menu-fixed"
+  dir="ltr"
+  data-theme="theme-default"
+  data-assets-path="../static/assets/"
+  data-template="vertical-menu-template"
+>
+  <head>
+    {% include 'layout/head.html' %}
+
+    <style>
+    </style>
+  </head>
+
+  <body>
+    <!-- Layout wrapper -->
+    <div class="layout-wrapper layout-content-navbar">
+      <div class="layout-container">
+        {% include 'layout/menu.html' %}
+
+        <!-- Layout container -->
+        <div class="layout-page">
+
+          {% include 'layout/navbar.html' %}
+
+          <div class="content-wrapper">
+            <!-- Content -->
+            <div class="container-xxl flex-grow-1 container-p-y">
+              <button id="startButton" class="btn btn-primary">Start</button>
+              <button id="stopButton" class="btn btn-danger">Stop</button>
+            </div>
+            <!-- / Content -->
+
+            {% include 'layout/footer.html' %}
+
+            <div class="content-backdrop fade"></div>
+          </div>
+        </div>
+        <!-- / Layout page -->
+      </div>
+
+      <!-- Overlay -->
+      <div class="layout-overlay layout-menu-toggle"></div>
+
+      <!-- Drag Target Area To SlideIn Menu On Small Screens -->
+      <div class="drag-target"></div>
+    </div>
+    <!-- / Layout wrapper -->
+
+    {% include 'layout/bodytail.html' %}
+
+    <script>
+      $(document).ready(function () {
+        
+      });
+    </script>
+
+    <script type="text/javascript" src="{{ url_for('static', filename='js/vad.js') }}"></script>
+    <script type="text/javascript">
+      document.getElementById('startButton').addEventListener('click', async function() {
+        console.log('Start recording.');
+
+        // Create AudioContext
+        window.AudioContext = window.AudioContext || window.webkitAudioContext;
+        var audioContext = new AudioContext();
+
+        // Define function called by getUserMedia 
+        function startUserMedia(stream) {
+          // Create MediaStreamAudioSourceNode
+          var source = audioContext.createMediaStreamSource(stream);
+
+          // Setup options
+          var options = {
+            source: source,
+            voice_stop: function() {console.log('voice_stop');}, 
+            voice_start: function() {console.log('voice_start');}
+          }; 
+          
+          // Create VAD
+          var vad = new VAD(options);
+        }
+
+        // Ask for audio device
+        navigator.getUserMedia = navigator.getUserMedia || 
+                                navigator.mozGetUserMedia || 
+                                navigator.webkitGetUserMedia;
+        navigator.getUserMedia({audio: true}, startUserMedia, function(e) {
+                console.log("No live audio input in this browser: " + e);
+        });
+      });
+
+    </script>
+  </body>
+</html>

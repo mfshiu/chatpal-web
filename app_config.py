@@ -13,5 +13,13 @@ db_params = {
     'port': '5432'
 }
 
+mqtt_params {
+    "host": "",
+    "port": 1883,
+    "keepalive": 60,
+    "username": "",
+    "password": "",
+}
+
 log_level = logging.DEBUG
 log_dir:str = "./_log"

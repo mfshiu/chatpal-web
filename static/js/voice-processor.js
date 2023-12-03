@@ -1,12 +1,12 @@
 const SILENCE_THRESHOLD = 250;
 const RMS_THRESHOLD = 0.03;
 
-class AudioProcessor extends AudioWorkletProcessor {
+class VoiceProcessor extends AudioWorkletProcessor {
     constructor() {
         super();
-        this.isSpeaking = false;
         this.silenceCount = 0;
-        this.speakingDetectedCallback = () => {}; // Placeholder for a callback
+        this.isSpeaking = false;
+        this.buffer = [];
     }
 
     process(inputs, outputs, parameters) {
@@ -24,19 +24,29 @@ class AudioProcessor extends AudioWorkletProcessor {
 
             let rms = Math.sqrt(sum / channelData.length);
             if (rms > RMS_THRESHOLD) {
-                this.silenceCount = 0;               
-                if (!this.isSpeaking) {
-                    this.isSpeaking = true;
-                    this.port.postMessage({ speaking: true, channelData: channelData });
+                this.isSpeaking = true;
+
+                input.forEach(channel => {
+                    // For simplicity, just taking the first channel
+                    this.buffer.push(...channel);
+                });
+
+                this.silenceCount = 0;    
+                if (this.buffer.length >= 44100) {            
+                    this.port.postMessage({ speaking: true, buffer: this.buffer });
+                    console.log("speaking: true, buffer: ", this.buffer.length);
+                    this.buffer = [];
                 }
             }
             else {
-                this.silenceCount++;
                 if (this.isSpeaking) {
+                    this.silenceCount++;
                     if (this.silenceCount > SILENCE_THRESHOLD) {
                         this.isSpeaking = false;
+                        console.log("speaking:", this.isSpeaking);
                         this.port.postMessage({ speaking: false });
                     }
+                    // console.log("speaking:", this.isSpeaking, ", silenceCount:", this.silenceCount);
                 }
             }
         }
@@ -45,4 +55,4 @@ class AudioProcessor extends AudioWorkletProcessor {
     }
 }
 
-registerProcessor('audio-processor', AudioProcessor);
+registerProcessor('voice-processor', VoiceProcessor);
