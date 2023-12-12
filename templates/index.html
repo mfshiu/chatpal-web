@@ -54,65 +54,105 @@
 
     <script src="https://cdn.jsdelivr.net/npm/onnxruntime-web/dist/ort.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@ricky0123/vad-web@0.0.7/dist/bundle.min.js"></script>
+    <script src="{{ url_for('static', filename='js/fixed-size-queue.js') }}""></script>
 
     <script>
       $(document).ready(function () {
-        
       });
     </script>
 
     <script>
-      let is_pause = true;
+      const head_slide = [];
+      const begin_voice = new FixedSizeQueue(5);
       let mediaRecorder;
       let audioChunks = [];
+      const startBtn = document.getElementById('startButton');
+      const stopBtn = document.getElementById('stopButton');
+      let listening = false;
+      let recording = false;
 
-      document.getElementById('startButton').addEventListener('click', async function() {
-        console.log('Start recording.');
-        is_pause = false;
+      function startListening(stream) {
+        console.log("Start listening.")
+        mediaRecorder = new MediaRecorder(stream);
+        mediaRecorder.ondataavailable = event => {
+          if (event.data.size > 0) {
+            if (head_slide.length == 0) {
+              head_slide.push(event.data);
+              // console.log("head_slide:", head_slide.length);
+            }
+            else if (recording) {
+              audioChunks.push(event.data);
+              // console.log("audioChunks:", audioChunks.length);
+            }
+            else {
+              begin_voice.enqueue(event.data);
+              // console.log("begin_voice:", begin_voice.queue.length);
+            }
+          }
+        }
+        mediaRecorder.start(100);
+
+        startBtn.disabled = true;
+        stopBtn.disabled = false;
+
+        mediaRecorder.onstop = () => {
+          console.log("Stop listening.")
+          stream.getTracks().forEach(track => track.stop());
+
+          begin_voice.clear();
+          startBtn.disabled = false;
+          stopBtn.disabled = true;
+        };
+      }
+
+      // Start listening
+      startBtn.addEventListener('click', () => {
+        listening = true;
+        navigator.mediaDevices.getUserMedia({ audio: true })
+          .then(startListening)
+          .catch(error => {
+            console.error('Error accessing media devices:', error);
+          });
       });
 
-      document.getElementById('stopButton').addEventListener('click', async function() {
-        console.log('Stop recording.');
-        is_pause = true;
-        audioChunks = [];
+      // Stop listening
+      stopBtn.addEventListener('click', () => {
+        listening = false;
+        mediaRecorder.stop();
       });
 
-      async function main() {
+      async function voice_avaliable_detect() {
+        // https://github.com/ricky0123/vad/blob/master/examples/bundler/src/index.js
         const myvad = await vad.MicVAD.new({
+          positiveSpeechThreshold: 0.8, // Default: 0.8, 啟動的敏銳度，愈小愈敏銳
+          // minSpeechFrames: 0, // Default: 5, 功能不明，調到20不會停
           onSpeechStart: () => {
-            if (is_pause) {
+            if (!listening) {
               return;
             }
-            console.log("Speech start detected")
-            navigator.mediaDevices.getUserMedia({ audio: true })
-            .then(stream => {
-              mediaRecorder = new MediaRecorder(stream);
-              mediaRecorder.ondataavailable = event => audioChunks.push(event.data);
-              mediaRecorder.start();
-              console.log("Start recording.");
-            });
+            console.log("Start recording.");
+            // console.log("head_slide:", head_slide.length, ", begin_voice:", begin_voice.queue.length);
+            audioChunks = [...head_slide, ...begin_voice.queue];
+            // console.log("Final audioChunks", audioChunks.length);
+            recording = true;
           },
           onSpeechEnd: (audio) => {
-            // do something with `audio` (Float32Array of audio samples at sample rate 16000)...
-            if (is_pause) {
+            if (!listening) {
               return;
             }
-            console.log("Speech end")
-            mediaRecorder.stop();
-            mediaRecorder.onstop = () => {
-              console.log("Upload wave. audioChunks:", audioChunks.length);
-              const audioBlob = new Blob(audioChunks, { 'type' : 'audio/wav; codecs=opus' });
-              audioChunks = [];
+            console.log("Stop recording.");
+            recording = false;
 
-              var formData = new FormData();
-              formData.append("audio_data", audioBlob);
-              fetch("/upload_voice", { method: "POST", body: formData });
-            }
+            console.log("Upload wave. audioChunks:", audioChunks.length);
+            const audioBlob = new Blob(audioChunks, { 'type' : 'audio/wav; codecs=opus' });
+            var formData = new FormData();
+            formData.append("audio_data", audioBlob);
+            fetch("/upload_voice", { method: "POST", body: formData });
           }
         })
         myvad.start()
       }
-      main()
+      voice_avaliable_detect()
 
     </script>
   </body>
