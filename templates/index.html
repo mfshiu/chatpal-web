@@ -29,8 +29,13 @@
           <div class="content-wrapper">
             <!-- Content -->
             <div class="container-xxl flex-grow-1 container-p-y">
-              <button id="startButton" class="btn btn-primary">Start</button>
-              <button id="stopButton" class="btn btn-danger">Stop</button>
+              <div>
+                <button id="startButton" class="btn btn-primary">Start</button>
+                <button id="stopButton" class="btn btn-danger">Stop</button>
+              </div>
+              <div>
+                <audio id="audioPlayer" controls style="margin: 10px 0 0 -20px;"></audio>
+              </div>
             </div>
             <!-- / Content -->
 
@@ -136,7 +141,7 @@
             // console.log("Final audioChunks", audioChunks.length);
             recording = true;
           },
-          onSpeechEnd: (audio) => {
+          onSpeechEnd: async (audio) => {
             if (!listening) {
               return;
             }
@@ -147,12 +152,49 @@
             const audioBlob = new Blob(audioChunks, { 'type' : 'audio/wav; codecs=opus' });
             var formData = new FormData();
             formData.append("audio_data", audioBlob);
-            fetch("/upload_voice", { method: "POST", body: formData });
+
+            async function postData(url, formData) {
+              // Default options are marked with *
+              const response = await fetch(url, {
+                  method: 'POST',
+                  //mode: 'cors',
+                  //cache: 'no-cache',
+                  //credentials: 'same-origin',
+                  //headers: {
+                  //    'Content-Type': 'application/json'
+                  //},
+                  //redirect: 'follow',
+                  //referrerPolicy: 'no-referrer',
+                  body: formData
+              });
+              return response.json(); // parses JSON response into native JavaScript objects
+            }
+
+            //postData('/upload_voice', formData)
+            //    .then((data) => {
+            //      console.log("Upload response 2:", data.response);
+            //    });
+            //const response = await fetch("/upload_voice", { method: "POST", body: formData });
+            //console.log("Upload response 1:", response.json());
+            fetch("/upload_voice", { method: "POST", body: formData })
+            .then(response => response.json())
+            .then(data => {
+                console.log("Upload response 4:", data.audioUrl);
+                playAudio(data.audioUrl);
+            })
+            .catch(error => console.error('Error:', error));
+            
           }
         })
         myvad.start()
       }
       voice_avaliable_detect()
+
+      function playAudio(mp3Url) {
+        var audioPlayer = document.getElementById('audioPlayer');
+        audioPlayer.src = mp3Url;
+        audioPlayer.play();
+      }
 
     </script>
   </body>
